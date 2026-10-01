@@ -30,7 +30,10 @@ Checklist:
 - [ ] `ssh orcd-compute` works once the node name is filled in
 - [ ] Permissions are sane: `chmod 700 ~/.ssh`, `chmod 600 ~/.ssh/authorized_keys`
 
-> TODO: write down what exactly was wrong with my key setup so I don't repeat it.
+What was actually wrong for me: no SSH key was set up on Engaging at all, so
+the hop from `orcd-login` to the compute node fell back to password auth and
+got "permission denied" instead of a password prompt. See
+[Troubleshooting](#troubleshooting) below.
 
 If the script's `salloc`/`squeue` step or the final connection fails, check the
 key setup first, before debugging the script.
@@ -109,6 +112,28 @@ allocation.
 ```bash
 ./scripts/orcd_interactive.sh 2
 ```
+
+## Troubleshooting
+
+### "Permission denied" connecting to the compute node
+
+Symptom: VS Code Remote-SSH (or a plain `ssh orcd-compute`) prompts for a
+password when hopping from `orcd-login` to the compute node, then fails with
+`Permission denied`.
+
+Per the [ORCD FAQ](https://orcd-docs.mit.edu/faqs/#i-cannot-connect-to-a-compute-node-using-vs-code-remote-ssh):
+
+> Sometimes, when following our instructions for running VS Code on the
+> cluster, users are prompted to enter their password when they connect to
+> the compute node and they get "permission denied." This is most often
+> because they do not have an SSH key set up on Engaging.
+
+Fix: set up an SSH key following the
+[ORCD SSH setup guide](https://orcd-docs.mit.edu/accessing-orcd/ssh-setup/)
+(same as the [Prerequisite](#prerequisite-ssh-key-this-is-the-part-that-bit-me)
+checklist above). Once a key is installed, the compute node hop authenticates
+with it directly instead of falling back to a password prompt that then gets
+rejected.
 
 ## Notes and gotchas
 
