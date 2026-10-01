@@ -26,3 +26,7 @@ Prerequisite: SSH key authentication to the cluster. See the note above.
 - One markdown file per topic under `notes/`.
 - Reusable scripts under `scripts/`, with usage documented in the header and in
   the matching note.
+
+## Acknowledgements
+
+Written with the help of [Claude](https://claude.com/claude-code).
