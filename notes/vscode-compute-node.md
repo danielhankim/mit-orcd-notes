@@ -54,8 +54,31 @@ Host orcd-compute
   ProxyJump orcd-login
 ```
 
-The `ControlMaster` lines keep the number of Duo prompts down by reusing one
-authenticated connection to the login node.
+What each line does:
+
+- **`Host orcd-login`** — the alias you type (`ssh orcd-login`); everything
+  indented under it applies only to connections using this alias.
+- **`HostName orcd-login.mit.edu`** — the actual address to connect to.
+- **`ControlMaster auto`** — enables SSH connection multiplexing: the first
+  connection becomes a "master" and later connections reuse it instead of a
+  fresh handshake.
+- **`ControlPath ~/.ssh/%r@%h:%p`** — where the multiplexing socket file
+  lives (`%r`/`%h`/`%p` = remote user/host/port).
+- **`ControlPersist 300s`** — keeps the master connection (and its auth)
+  alive in the background for 300s after your last session closes, so a
+  reconnect within that window skips Duo/MFA. This is what lets
+  `orcd_interactive.sh`'s watcher reuse the already-authenticated
+  `orcd-login` connection.
+- **`User USERNAME`** — your cluster account name; replace the placeholder.
+- **`Host orcd-compute`** — the alias VSCode and both scripts connect to.
+- **`HostName nodename`** — placeholder; the scripts overwrite this with the
+  real compute node name once `salloc`/`squeue` reports it.
+- **`ProxyJump orcd-login`** — hop through `orcd-login` first (reusing its
+  multiplexed connection) since the compute node usually isn't reachable
+  directly from outside the cluster network.
+
+The `ControlMaster`/`ControlPersist` lines keep the number of Duo prompts down
+by reusing one authenticated connection to the login node.
 
 ## Script A: `scripts/orcd_node.sh` (recommended)
 
