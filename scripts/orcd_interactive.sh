@@ -14,7 +14,8 @@ HOURS="${1:--1}"
 LOGIN_HOST="orcd-login"
 COMPUTE_HOST="orcd-compute"
 PARTITION="mit_normal"
-JOBNAME="vscode"
+# Unique per run, so the watcher never matches an older still-running job.
+JOBNAME="vscode-$(date +%Y%m%d-%H%M%S)-$$"
 CONFIG="$HOME/.ssh/config"
 
 if ! [[ "$HOURS" =~ ^-?[0-9]+$ ]]; then
@@ -46,7 +47,7 @@ watcher() {
   local node=""
   while [[ -z "$node" ]]; do
     sleep 3
-    node=$(ssh "${SSH_OPTS[@]}" -o BatchMode=yes "$LOGIN_HOST" \
+    node=$(ssh -n "${SSH_OPTS[@]}" -o BatchMode=yes "$LOGIN_HOST" \
            "squeue --me -h -n $JOBNAME -t R -o %N" 2>/dev/null | head -n1 | tr -d '[:space:]')
   done
   update_config "$node"
