@@ -8,15 +8,16 @@ Official docs: <https://orcd-docs.mit.edu/>
 
 | Topic | Note | Scripts |
 |-------|------|---------|
-| VSCode on a compute node (auto-update SSH config) | [notes/vscode-compute-node.md](notes/vscode-compute-node.md) | [scripts/orcd_node.sh](scripts/orcd_node.sh), [scripts/orcd_interactive.sh](scripts/orcd_interactive.sh) |
+| VSCode on a compute node (auto-update SSH config) | [notes/vscode-compute-node.md](notes/vscode-compute-node.md) | [scripts/orcd_interactive.sh](scripts/orcd_interactive.sh), [scripts/orcd_node.sh](scripts/orcd_node.sh) |
 
 ## Quick start
 
 ```bash
 git clone <this-repo>
 cd orcd-notes
-./scripts/orcd_node.sh 4      # get a node for 4 hours and update ~/.ssh/config
-# then connect to the `orcd-compute` host from VSCode
+./scripts/orcd_interactive.sh 4   # get a node for 4 hours and update ~/.ssh/config
+# keep that terminal open, then connect to the `orcd-compute` host from VSCode
+# closing the terminal ends the allocation (no leftover jobs on the cluster)
 ```
 
 Prerequisite: SSH key authentication to the cluster. See the note above.

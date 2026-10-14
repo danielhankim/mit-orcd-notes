@@ -12,8 +12,8 @@ session:
 2. `hostname` (or `squeue --me`) to find the node name
 3. Edit `HostName` in the `orcd-compute` block of `~/.ssh/config`, then connect
 
-`scripts/orcd_node.sh` does all of this with one command, run from your
-**local machine**.
+`scripts/orcd_interactive.sh` (recommended) and `scripts/orcd_node.sh` each do
+all of this with one command, run from your **local machine**.
 
 ## Prerequisite: SSH key (this is the part that bit me)
 
@@ -83,7 +83,43 @@ What each line does:
 The `ControlMaster`/`ControlPersist` lines keep the number of Duo prompts down
 by reusing one authenticated connection to the login node.
 
-## Script A: `scripts/orcd_node.sh` (recommended)
+## Which script?
+
+Use **`orcd_interactive.sh`** by default. The allocation's lifetime is tied to
+your terminal: exit the shell or close the terminal and the job ends, so
+nothing is left running on the cluster.
+
+`orcd_node.sh` uses `salloc --no-shell`, so the allocation outlives the SSH call
+by design. That makes it easy to forget a job, and a leftover job breaks the
+next run (both are named `vscode`, so the new run can pick up or collide with
+the old one). Only use it when you really need the node to survive a closed
+terminal, and remember to `scancel` afterwards.
+
+Trade-off of the interactive script: closing the terminal by accident (or
+losing the network / laptop sleeping) kills the allocation, and with it the
+VSCode session. That is the price for never leaving orphaned jobs behind.
+
+## Script A: `scripts/orcd_interactive.sh` (recommended)
+
+```bash
+./scripts/orcd_interactive.sh 2     # request 2 hours
+./scripts/orcd_interactive.sh -1    # no time flag (partition default)
+```
+
+How it works:
+
+1. Opens a classic interactive `salloc` shell on `orcd-login` in your terminal
+   (`ssh -t orcd-login salloc -J vscode-<timestamp>-<pid> ...`). **Keep this
+   terminal open** while you work.
+2. A background watcher reuses the same multiplexed SSH connection to poll
+   `squeue` until the job is running, then rewrites `HostName` in the
+   `orcd-compute` block (backup saved as `~/.ssh/config.bak`).
+3. The job name is unique per run, so the watcher never matches an older job
+   that is still alive.
+4. Exiting the shell (or closing the terminal) ends the allocation. No manual
+   `scancel` needed.
+
+## Script B: `scripts/orcd_node.sh` (detached, leaves the job running)
 
 ```bash
 ./scripts/orcd_node.sh 4     # request 4 hours
@@ -100,18 +136,9 @@ How it works:
 4. Rewrites `HostName` in the `orcd-compute` block (backup saved as
    `~/.ssh/config.bak`).
 
-Release the node when finished: `ssh orcd-login scancel -n vscode`
-
-## Script B: `scripts/orcd_interactive.sh` (keeps a shell)
-
-Use this if you want the classic interactive `salloc` shell in your terminal.
-A background watcher reuses the same SSH connection to poll `squeue` and update
-the config as soon as the job is running. Exiting the shell ends the
-allocation.
-
-```bash
-./scripts/orcd_interactive.sh 2
-```
+Release the node when finished: `ssh orcd-login scancel -n vscode`.
+Otherwise it keeps running until the time limit, and the next run can trip over
+it.
 
 ## Troubleshooting
 
@@ -145,8 +172,9 @@ rejected.
   Change the variables at the top if yours differ.
 - On Windows, run in WSL or Git Bash and make sure `CONFIG` points at the
   `~/.ssh/config` that VSCode actually reads.
-- Cancel stale jobs (`scancel -n vscode`) before starting a new one, since the
-  scripts identify the job by name.
+- If you used `orcd_node.sh`, cancel stale jobs (`ssh orcd-login scancel -n vscode`)
+  before starting a new one, since it identifies the job by name. Check for
+  leftovers with `ssh orcd-login squeue --me`.
 - Only add the directories you need to the VSCode workspace, not your whole
   home or group storage.
 
