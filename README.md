@@ -15,7 +15,7 @@ Official docs: <https://orcd-docs.mit.edu/>
 ```bash
 git clone <this-repo>
 cd orcd-notes
-./scripts/orcd_interactive.sh 4   # get a node for 4 hours and update ~/.ssh/config
+./scripts/orcd_interactive.sh     # get a node (1 core, 16 GB, 4 h) and update ~/.ssh/config
 # keep that terminal open, then connect to the `orcd-compute` host from VSCode
 # closing the terminal ends the allocation (no leftover jobs on the cluster)
 ```

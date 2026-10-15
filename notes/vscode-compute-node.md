@@ -102,8 +102,10 @@ VSCode session. That is the price for never leaving orphaned jobs behind.
 ## Script A: `scripts/orcd_interactive.sh` (recommended)
 
 ```bash
-./scripts/orcd_interactive.sh 2     # request 2 hours
-./scripts/orcd_interactive.sh -1    # no time flag (partition default)
+./scripts/orcd_interactive.sh             # defaults: 1 core, 16 GB, 4 hours
+./scripts/orcd_interactive.sh 4 32 2      # 4 cores, 32 GB, 2 hours
+./scripts/orcd_interactive.sh -1 64 -1    # 1 core, 64 GB, 4 hours (-1 = default)
+./scripts/orcd_interactive.sh 4          # error: pass all three or none
 ```
 
 How it works:
@@ -122,13 +124,13 @@ How it works:
 ## Script B: `scripts/orcd_node.sh` (detached, leaves the job running)
 
 ```bash
-./scripts/orcd_node.sh 4     # request 4 hours
-./scripts/orcd_node.sh -1    # no time flag (partition default)
+./scripts/orcd_node.sh             # defaults: 1 core, 16 GB, 4 hours
+./scripts/orcd_node.sh 2 32 8      # 2 cores, 32 GB, 8 hours
 ```
 
 How it works:
 
-1. SSHes to `orcd-login` and runs `salloc --no-shell -J vscode -p mit_normal [-t H:00:00]`.
+1. SSHes to `orcd-login` and runs `salloc --no-shell -J vscode -p mit_normal -c C --mem=MG -t H:00:00`.
 2. `--no-shell` holds the allocation without an interactive shell, so it
    survives after the SSH call returns.
 3. Reads the job ID from "Granted job allocation", then the node from
@@ -166,8 +168,13 @@ rejected.
 
 - Run the scripts **locally**, not on the cluster. They need to SSH out and
   edit the local `~/.ssh/config`.
-- Time argument is in **hours**; `-1` omits `-t`. For minutes, change
-  `-t ${HOURS}:00:00` to `-t ${HOURS}`.
+- Arguments are `CORES MEM_GB HOURS`, in that order. Pass all three or none;
+  anything else is rejected so a lone `4` can't be misread. No arguments, or
+  `-1` in a slot, gives the default (1 core, 16 GB, 4 hours). The script
+  prints the requested cores, memory and time before calling `salloc`. Memory is
+  always passed explicitly because the partition default was small enough that
+  VSCode server ran out of memory and the connection dropped. For minutes,
+  change `-t ${HOURS}:00:00` to `-t ${HOURS}`.
 - Both scripts assume the host aliases `orcd-login` and `orcd-compute`.
   Change the variables at the top if yours differ.
 - On Windows, run in WSL or Git Bash and make sure `CONFIG` points at the
